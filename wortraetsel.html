@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script>
+        var matrixBreite = 10;
+        var matrixHoehe = 10;
+        var woerter = ["KRUMM", "UNMUT", "PAUSCHALE", "BLENDEN", "VERBRECHEN", "SPECHT", "ANSTALT", "DORT", "TAG", "BRUT", "SHOW", "STAUB", "KLOPFEN", "THRILLER", "KUH", "ZIEL", "SOS"]
+        var restbuchstaben = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "X", "Y", "Z"]
+
+        var firstZ = -1;
+        var firstS = -1;
+
+        function pruefe(element) {
+            var az = element.getAttribute("z");
+            var as = element.getAttribute("s");
+            var z = parseInt(az);
+            var s = parseInt(as);
+            if (firstZ >= 0) {
+                var deltaZ = 0;
+                if (firstZ < z) {
+                    deltaZ = 1;
+                } else if (firstZ > z) {
+                    deltaZ = -1;
+                }
+                var deltaS = 0;
+                if (firstS < s) {
+                    deltaS = 1;
+                } else if (firstS > s) {
+                    deltaS = -1;
+                }
+                var wort = "";
+                var zellen = [];
+                while (true) {
+                    //console.log("Wort=" + wort + " firstS=" + firstS + " FristZ=" + firstZ + " deltaZ=" + deltaZ + " deltaS=" + deltaS + " z=" + z + " s=" + s)
+                    var zelle = getZelle(firstZ, firstS);
+                    if (zelle) {
+                        zellen.push(zelle);
+                        wort += zelle.innerHTML;
+                        if (firstZ == z && firstS == s) {
+                            console.log("SelektiertesWort=" + wort);
+
+                            var li = document.getElementById(wort)
+                            if (li) {
+                                li.style.color = "green";
+                                for (j = 0; j < zellen.length; j++) {
+                                    zellen[j].style.backgroundColor = "green";
+                                }
+                            }
+                            break;
+                        }
+                        firstZ = firstZ + deltaZ;
+                        firstS = firstS + deltaS;
+
+                    } else {
+                        break
+                    }
+                }
+
+                firstZ = -1;
+                firstS = -1;
+            } else {
+                firstZ = z;
+                firstS = s;
+            }
+        }
+        function zeichneLeereMatrix() {
+            deleteTable();
+            console.log("zeichneLeereMatrix : matrixBreite=" + matrixBreite + " matrixHoehe=" + matrixHoehe);
+            var body = document.getElementsByTagName('body')[0];
+            var tbl = document.createElement('table');
+            tbl.id = 'tablematrix';
+            tbl.setAttribute('border', '1');
+            var tbdy = document.createElement('tbody');
+            for (var z = 0; z < matrixHoehe; z++) {
+                var tr = document.createElement('tr');
+                for (var s = 0; s < matrixBreite; s++) {
+                    var td = document.createElement('td');
+                    td.style.width = "50px";
+                    td.style.height = "50px";
+                    td.style.textAlign = "center"
+                    td.style.fontSize = "large";
+                    td.id = getId(z, s);
+                    td.innerHTML = " ";
+                    td.setAttribute("z", z);
+                    td.setAttribute("s", s);
+                    td.onclick = function () { pruefe(this); };
+                    tr.appendChild(td);
+                }
+                tbdy.appendChild(tr);
+            }
+            tbl.appendChild(tbdy);
+            body.appendChild(tbl)
+        }
+
+
+        function getValue(z, s) {
+            return getZelle(z, s).innerHTML
+        }
+        function setValue(z, s, w) {
+            getZelle(z, s).innerHTML = w;
+        }
+        function getId(z, s) {
+            return z + "-" + s;
+        }
+        function deleteTable() {
+            var tbl = document.getElementById("tablematrix");
+            if (tbl) {
+                tbl.parentNode.removeChild(tbl);
+            }
+            var ul = document.getElementById("Liste");
+            if (ul) {
+                ul.innerHTML = "";
+            }
+        }
+
+        function getZelle(z, s) {
+            return document.getElementById(getId(z, s));
+        }
+        function einfuegen() {
+            zeichneLeereMatrix();
+
+            //versuche jedes wort einzufügen:
+            for (i = 0; i < woerter.length; i++) {
+                var wort = woerter[i];
+                var richtung = Math.floor(Math.random() * 8);
+                console.log("Versuche Wort:" + wort + " in Richtung " + richtung);
+                for (v = 0; v < 1000; v++) {
+                    var startZ = Math.floor(Math.random() * matrixHoehe);
+                    var startS = Math.floor(Math.random() * matrixBreite);
+
+                    var pruefErgebnis = platziere(startZ, startS, wort, richtung, true);
+                    if (pruefErgebnis) {
+                        platziere(startZ, startS, wort, richtung, false);
+                        var ul = document.getElementById("Liste");
+                        var li = document.createElement("li");
+                        li.id = wort;
+                        li.innerHTML = wort;
+                        ul.appendChild(li);
+                        break;
+                    }
+                }
+            }
+            ausfuellen();
+        }
+        function platziere(z, s, wort, richtung, istPruefung) {
+            for (b = 0; b < wort.length; b++) {
+                var buchstabe = wort.substring(b, b + 1);
+                var aktuellerWert = getValue(z, s);
+                if (aktuellerWert == buchstabe || aktuellerWert == " ") {
+                    if (!istPruefung) {
+                        setValue(z, s, buchstabe);
+                    }
+                } else {
+                    return false;
+                }
+                if (richtung === 0) {
+                    // horizontal rechts
+                    s++;
+                } else if (richtung === 1) {
+                    // horizontal links
+                    s--;
+                } else if (richtung === 2) {
+                    // vertikal oben
+                    z++;
+                } else if (richtung === 3) {
+                    // vertikal unten
+                    z--;
+                } else if (richtung === 4) {
+                    // diagonal oben rechts
+                    z++;
+                    s++;
+                } else if (richtung === 5) {
+                    // diagonal oben link
+                    z++;
+                    s--;
+                } else if (richtung === 6) {
+                    // diagonal unten rechts
+                    z--;
+                    s++;
+                } else if (richtung === 7) {
+                    // diagonal unten links
+                    z--;
+                    s--;
+                }
+                if (z < 0 || z >= matrixHoehe) {
+                    return false;
+                }
+                if (s < 0 || s >= matrixBreite) {
+                    return false;
+                }
+            }
+            return true
+
+        }
+
+        function ausfuellen() {
+            for (z = 0; z < matrixHoehe; z++) {
+                for (s = 0; s < matrixBreite; s++) {
+                    if (getValue(z, s) == " ") {
+                        var b = restbuchstaben[Math.floor(Math.random() * restbuchstaben.length)];
+                        setValue(z, s, b);
+                    }
+                }
+            }
+            var b = restbuchstaben[Math.floor(Math.random() * restbuchstaben.length)];
+        }
+    </script>
+</head>
+
+<body>
+    <h2>Wortsuche</h2>
+    <ul id="Liste"> </ul>
+</body>
+<script>einfuegen()</script>
+
+</html>
